@@ -249,14 +249,14 @@ describe('ChatView', () => {
 
 			const textarea = (await rendered.findByRole('textbox')) as HTMLTextAreaElement;
 			await user.click(textarea);
-			await user.type(textarea, 'Hello, AI!{Enter}');
+			await user.type(textarea, 'What is n8n?{Enter}');
 
 			expect(textarea.value).toBe('');
 
 			expect(chatApi.sendMessageApi).toHaveBeenCalledWith(
 				expect.anything(),
 				expect.objectContaining({
-					message: 'Hello, AI!',
+					message: 'What is n8n?',
 					model: { provider: 'custom-agent', agentId: 'agent-123' },
 					sessionId: expect.any(String),
 					credentials: {},
@@ -281,10 +281,39 @@ describe('ChatView', () => {
 				}),
 			);
 
+			await rendered.findByText('What is n8n?');
+			let messages = rendered.queryAllByTestId('chat-message');
+
 			onMessageUpdated(
 				createMockStreamChunk({
 					type: 'item',
-					content: 'Hello! How can I help?',
+					content: 'n8n is',
+					metadata: {
+						messageId: 'ai-message-123',
+						previousMessageId: messageIdFromApi,
+					},
+				}),
+			);
+
+			expect(await rendered.findByText(/n8n is/)).toBeInTheDocument();
+
+			onMessageUpdated(
+				createMockStreamChunk({
+					type: 'item',
+					content: ' a workflow',
+					metadata: {
+						messageId: 'ai-message-123',
+						previousMessageId: messageIdFromApi,
+					},
+				}),
+			);
+
+			expect(await rendered.findByText(/n8n is a workflow/)).toBeInTheDocument();
+
+			onMessageUpdated(
+				createMockStreamChunk({
+					type: 'item',
+					content: ' automation tool.',
 					metadata: {
 						messageId: 'ai-message-123',
 						previousMessageId: messageIdFromApi,
@@ -305,17 +334,16 @@ describe('ChatView', () => {
 
 			onDone();
 
+			expect(await rendered.findByText('n8n is a workflow automation tool.')).toBeInTheDocument();
 			expect(mockRouterPush).toHaveBeenCalledWith({
 				name: 'chat-conversation',
 				params: { id: sessionIdFromApi },
 			});
 
-			expect(await rendered.findByText('Hello! How can I help?')).toBeInTheDocument();
-
-			const messages = rendered.queryAllByTestId('chat-message');
+			messages = rendered.queryAllByTestId('chat-message');
 			expect(messages).toHaveLength(2);
-			expect(messages[0]).toHaveTextContent('Hello, AI!');
-			expect(messages[1]).toHaveTextContent('Hello! How can I help?');
+			expect(messages[0]).toHaveTextContent('What is n8n?');
+			expect(messages[1]).toHaveTextContent('n8n is a workflow automation tool.');
 		});
 
 		it('sends message in existing session and displays both user and AI messages', async () => {
