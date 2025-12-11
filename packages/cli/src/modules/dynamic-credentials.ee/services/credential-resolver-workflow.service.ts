@@ -80,6 +80,7 @@ export class CredentialResolverWorkflowService {
 		const credentialsStatuses: Array<{
 			credentialId: string;
 			resolverId?: string;
+			credentialType: string;
 			status: 'missing' | 'configured';
 		}> = [];
 
@@ -113,6 +114,7 @@ export class CredentialResolverWorkflowService {
 								credentialId: credential.id,
 								resolverId: credentialResolverId,
 								status: 'configured',
+								credentialType: credential.type,
 							});
 						} catch (error) {
 							// Handle error (e.g., log it, collect status, etc.
